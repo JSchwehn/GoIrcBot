@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"decoding/json"
 	"fmt"
 	"log"
 	"net/textproto"
@@ -19,10 +18,8 @@ const SLEEP = 500
 
 // global vars
 var (
-	//	err           error
-	//	secret        string
-Trace         *log.Logger
-	Error         *log.Logger
+	Trace         *log.Logger
+Error         *log.Logger
 	debug         = true
 	privMsg       = regexp.MustCompile("^:([a-zA-Z0-9`_\\-]+)!.+@(.+)PRIVMSG (#[a-zA-Z0-9_]+) :(.*)$")
 	directMsg     = regexp.MustCompile("^:([a-zA-Z0-9`_\\-]+)!.+@(.+)PRIVMSG ([a-zA-Z0-9_]+) :(.*)$")
@@ -174,10 +171,6 @@ func (bot Bot) messageHandler(msg IrcMessage) {
 }
 func (bot Bot) handelCommand(cmd Command) {
 	switch cmd.command {
-	case "say":
-		if cmd.isPrivate {
-			bot.sendMessage(bot.channel, cmd.rawParam)
-		}
 	case "show":
 		if bot.isAdmin(cmd.sender) {
 			keys := make([]int, 0, len(bot.suggestions))
