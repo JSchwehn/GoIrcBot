@@ -1,40 +1,8 @@
 package main
 
-/**
-A small IRC bot.
-
-Features
-- can join a defined IRC channel
-- reacts to ping
-- will not reconnect after a kick
-- the topic list will be reset after 24h of no interaction
-- the topic list will be closed after 12h of idle or if it received 100 suggestions
-- a user can only submit one suggestion in a second to avoid flooding
-- there will be a hard coded master account to avoid a hostile takeover
-- the bot will have public assessable commands
-	- !topic <topic string>   : Suggest a topic
-	- !show                   : Will send a list of already submitted topics and there index numbers
-	- !vote <topicId int>     : Count a vote for a topic | can be done through direct msg too
-	- !help                   : Shows a list of commands available for that user
-	- !obeyMe <pass string>   : Will only recognised if sent as a direct message. Used to authenticate a user with
-	                            a provided password
-	After a user has been successful authenticated he has access to a admin commands. Each admin command
-	*must* be send as a direct message
-	- !blockUser <nick string>   : Prevent a user from suggesting topics and voting for them (We have to keep those trolls in check)
-	- !unblockUser <nick string> : Unblocks a user so he is able to suggest and vote again (you are soft, did I mentioned that?)
-	- !resetTopicList            : Flushes the topic list
-	- !addMaster <nick string> <pass string>  : adds a new
-	- !delMaster <nick string>   : Removes a master from the system
-	- !lock                      : Closes the topic list for new suggestions
-	- !displayWinner             : Shows all suggested topics and the amount of votes for each. Sorted lowest first.
-	- !forceWinner <topicId int> : You are a cheat, but I dig that :)
-	- !removeTopic <topicId int> : Removes a topic
-	- !quit <message string>     : Shutdown the bot and leave a goodbye message
-
-*/
-
 import (
 	"encoding/json"
+	"decoding/json"
 	"fmt"
 	"log"
 	"net/textproto"
@@ -49,9 +17,9 @@ const SLEEP = 500
 
 // global vars
 var (
-	err           error
-	secret        string
-	Trace         *log.Logger
+	//	err           error
+	//	secret        string
+Trace         *log.Logger
 	Error         *log.Logger
 	debug         = true
 	privMsg       = regexp.MustCompile("^:([a-zA-Z0-9`_\\-]+)!.+@(.+)PRIVMSG (#[a-zA-Z0-9_]+) :(.*)$")
@@ -155,8 +123,14 @@ func (bot Bot) nickCollisionHandler() {
 	bot.conn.Cmd("NICK %s\r\n", bot.config.Nick)
 }
 func (bot Bot) endOfMOTDHandler() {
-	for _, c := range bot.config.Channels {
+	for i, c := range bot.config.Channels {
 		bot.conn.Cmd("JOIN %s\r\n", c)
+		if debug {
+			fmt.Printf("... joining channel %s \n", c)
+		}
+		if i%2 == 0 {
+			time.Sleep(SLEEP * time.Millisecond)
+		}
 	}
 
 }
@@ -167,7 +141,6 @@ func (bot Bot) directMessageHandler(msg IrcMessage) {
 	if match := pCommand.FindStringSubmatch(msg.message); match != nil {
 		if debug {
 			fmt.Printf("Command found: %s from %s\n", msg.message, msg.sender)
-			fmt.Printf("DEBUG: %s", msg)
 		}
 
 		bot.handelCommand(Command{
@@ -186,7 +159,6 @@ func (bot Bot) messageHandler(msg IrcMessage) {
 		if debug {
 			fmt.Printf("DEBUG: %s", msg)
 		}
-
 		bot.handelCommand(Command{
 			sender:     msg.sender,
 			receiver:   msg.receiver,
@@ -200,17 +172,10 @@ func (bot Bot) messageHandler(msg IrcMessage) {
 }
 func (bot Bot) handelCommand(cmd Command) {
 	switch cmd.command {
-	//case "say":
-	//	if cmd.isPrivate {
-	//		bot.sendMessage(bot.channel, cmd.rawParam)
-	//	}
-
-	//case "show":
-	//	for index, title := range bot.suggestions {
-	//text := fmt.Sprintf("ID: %d Titel: %s (%d)", index, title.titleSuggestion, title.numOfVotes)
-	//bot.sendMessage(cmd.sender, text)
-	//time.Sleep(SLEEP * time.Millisecond)
-	//}
+	case "say":
+		if cmd.isPrivate {
+			bot.sendMessage(bot.channel, cmd.rawParam)
+		}
 	case "show":
 		if bot.isAdmin(cmd.sender) {
 			keys := make([]int, 0, len(bot.suggestions))
@@ -223,7 +188,6 @@ func (bot Bot) handelCommand(cmd Command) {
 				bot.sendMessage(cmd.answerTo, text)
 				fmt.Printf("-> %s Msg: %s\n", cmd.answerTo, text)
 				time.Sleep(SLEEP * time.Millisecond)
-
 			}
 		}
 	case "title":
@@ -254,10 +218,6 @@ func (bot Bot) handelCommand(cmd Command) {
 				Pass: data[1],
 			}
 
-			//bot.admins[data[0]] = data[1]
-			//for k, v := range bot.admins {
-			//	fmt.Printf("User: '%s' - Pass: '%s' \n", k, v)
-			//}
 			bot.config.Admins = append(bot.config.Admins, newAdmin)
 			fmt.Println(bot.config)
 		}
@@ -272,8 +232,6 @@ func (bot Bot) handelCommand(cmd Command) {
 		}
 	case "fisch":
 		bot.sendMessage(cmd.answerTo, "Fischers Frize hat blaue Brautkleider.")
-	case "showNotes":
-		bot.sendMessage(cmd.answerTo, "http://beta.showmator.com:63685/live/6s65pmhd7vi")
 	case "help":
 		bot.showHelp(cmd.receiver)
 	}
