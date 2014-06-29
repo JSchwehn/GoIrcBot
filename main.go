@@ -1,3 +1,5 @@
+// code based on http://jarredkenny.com/blog/The-way-to-Go-A-simple-IRC-bot
+
 package main
 
 import (
